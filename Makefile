@@ -12,15 +12,17 @@ DB = $(TOOLCHAIN_ROOT)arm-none-eabi-gdb
 
 SRC_FILES = $(wildcard $(SRC_DIR)*.c) $(wildcard $(SRC_DIR)*/*.c)
 ASM_FILES = $(wildcard $(SRC_DIR)*.s) $(wildcard $(SRC_DIR)*/*.s)
-LD_SCRIPT = $(SRC_DIR)/device/STM32G431RBTX_FLASH.ld #TODO see dif between normal and _FLASH
+LD_SCRIPT = $(SRC_DIR)/device/STM32G491CETx_FLASH.ld #TODO see dif between normal and _FLASH
 
 INCLUDES  = -I$(INC_DIR)
 
 
 #TODO PULL FROM THE CUBE TO ACTUALLY GREP TO
-ASM_FILES += $(VENDOR_ROOT)Drivers/CMSIS/Device/ST/STM32G4xx/Source/Templates/gcc/startup_stm32g431xx.s
+ASM_FILES += $(VENDOR_ROOT)Drivers/CMSIS/Device/ST/STM32G4xx/Source/Templates/gcc/startup_stm32g491xx.s
 #SRC_FILES += $(VENDOR_ROOT)Drivers/CMSIS/Device/ST/STM32G4xx/Source/Templates/system_stm32g4xx.c
-SRC_FILES += $(VENDOR_ROOT)Drivers/BSP/STM32G4xx_Nucleo/stm32g4xx_nucleo.c #TODO CHECK
+#SRC_FILES += $(VENDOR_ROOT)Drivers/BSP/STM32G4xx_Nucleo/stm32g4xx_nucleo.c #TODO CHECK
+SRC_FILES += $(VENDOR_ROOT)Drivers/CMSIS/DSP/Source/CommonTables/arm_common_tables.c
+SRC_FILES += $(VENDOR_ROOT)Drivers/CMSIS/DSP/Source/FastMathFunctions/arm_cos_f32.c
 SRC_FILES += $(VENDOR_ROOT)Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.c
 SRC_FILES += $(VENDOR_ROOT)Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.c
 SRC_FILES += $(VENDOR_ROOT)Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.c
@@ -42,13 +44,14 @@ INCLUDES += -I$(VENDOR_ROOT)Drivers/CMSIS/Core/Include
 INCLUDES += -I$(VENDOR_ROOT)Drivers/CMSIS/DSP/Include
 INCLUDES += -I$(VENDOR_ROOT)Drivers/CMSIS/Device/ST/STM32G4xx/Include
 INCLUDES += -I$(VENDOR_ROOT)Drivers/STM32G4xx_HAL_Driver/Inc
-INCLUDES += -I$(VENDOR_ROOT)Drivers/BSP/STM32G4xx_Nucleo
+#INCLUDES += -I$(VENDOR_ROOT)Drivers/BSP/STM32G4xx_Nucleo #TODO LOOK INTO
 
 
 CFLAGS  = -g -O0 -Wall -Wextra -Warray-bounds -Wno-unused-parameter
-CFLAGS += -mcpu=cortex-m7 -mthumb -mlittle-endian -mthumb-interwork 
+CFLAGS += -mcpu=cortex-m4 -mthumb -mlittle-endian -mthumb-interwork 
 CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16 #TODO CHECK
-CFLAGS += -DSTM32G431xx -DUSE_STM32G4XX_NUCLEO_144 -DUSE_HAL_DRIVER 
+CFLAGS += -DSTM32G491xx -DUSE_HAL_DRIVER 
+CFLAGS += -DARM_ALL_FAST_TABLES -DARM_TABLE_SIN_F32 -DARM_DSP_CONFIG_TABLES -DARM_FAST_ALLOW_TABLES #TODO READD AFTER FIRMWARE VALIDATION
 CFLAGS += $(INCLUDES) 
 
 LFLAGS = -Wl,--gc-sections -Wl,-T$(LD_SCRIPT) --specs=rdimon.specs
