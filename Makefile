@@ -23,6 +23,7 @@ ASM_FILES += $(VENDOR_ROOT)Drivers/CMSIS/Device/ST/STM32G4xx/Source/Templates/gc
 #SRC_FILES += $(VENDOR_ROOT)Drivers/BSP/STM32G4xx_Nucleo/stm32g4xx_nucleo.c #TODO CHECK
 SRC_FILES += $(VENDOR_ROOT)Drivers/CMSIS/DSP/Source/CommonTables/arm_common_tables.c
 SRC_FILES += $(VENDOR_ROOT)Drivers/CMSIS/DSP/Source/FastMathFunctions/arm_cos_f32.c
+SRC_FILES += $(VENDOR_ROOT)Drivers/CMSIS/DSP/Source/FastMathFunctions/arm_sin_f32.c
 SRC_FILES += $(VENDOR_ROOT)Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.c
 SRC_FILES += $(VENDOR_ROOT)Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.c
 SRC_FILES += $(VENDOR_ROOT)Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.c

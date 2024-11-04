@@ -47,18 +47,23 @@ extern "C" {
 #define _U_OUT 100
 #define _SQRT3 1.73205081
 #define _PIdiv3 1.04719755
+#define _PIdiv6 0.523598775598
+#define _5PIdiv6 2.61799387799
 #define _PI 3.14159265
+#define _PI330 5.7595865315
+#define _PI210 3.66519142919
+#define _PI_90 1.57079632679
+#define _DEBUG_FLAG 0
 
 
-extern float32_t ThetaV, ThetaC;
+extern float32_t ThetaOut;
+extern float32_t ThetaA, ThetaB, ThetaC;
+extern float32_t ThetaAB, ThetaBC, ThetaCA;
 extern float32_t cosinevalue;
-extern float32_t cos_a;
-extern float32_t cos_b;
-extern float32_t cos_c;
+extern float32_t sin_ab, sin_bc, sin_ca;
+extern float32_t cos_a, cos_b, cos_c;
 extern float32_t DFreq;
-extern float32_t V_AB;
-extern float32_t V_BC;
-extern float32_t V_AC;
+extern float32_t V_AB, V_BC, V_CA;
 extern float32_t v_ab;
 extern float32_t v_ac;
 extern float32_t DENOM;

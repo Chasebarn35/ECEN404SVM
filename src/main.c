@@ -63,13 +63,14 @@ static void MX_TIM7_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-float32_t ThetaV = 0, ThetaC = 0;
+float32_t ThetaOut = 0;
+float32_t ThetaA = 0, ThetaB = 0, ThetaC = 0;
+float32_t ThetaAB= 0, ThetaBC= 0, ThetaCA= 0;
 float32_t cosinevalue = 0;
+float32_t sin_ab= 0, sin_bc= 0, sin_ca= 0;
 float32_t cos_a = 0, cos_b = 0, cos_c = 0;
 float32_t DFreq = 60;//TODO REPLACE WITH UART COMMUNICATION
-float32_t V_AB = 0;
-float32_t V_BC = 0;
-float32_t V_AC = 0;
+float32_t V_AB = 0, V_BC = 0, V_CA = 0;
 float32_t v_ab = 0;
 float32_t v_ac = 0;
 float32_t DENOM = 0;

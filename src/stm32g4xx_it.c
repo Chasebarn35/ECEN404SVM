@@ -221,29 +221,39 @@ void EXTI2_IRQHandler(void)
 
 /**
  * @brief This function handles EXTI line[9:5] interrupts.
- *///EXTI9_5 has V_C
+ *///EXTI9_5 has V_CA
 void EXTI9_5_IRQHandler(void)
 {
 
-	if(__HAL_GPIO_EXTI_GET_IT(V_C_Pin)!=RESET){ //TODO POTENTIALLY REMOVE?
+	if(__HAL_GPIO_EXTI_GET_IT(V_C_Pin)!=RESET){ 
+		ThetaCA = 0;
+		ThetaC = _PI330;
+		ThetaA = _PI210;
+		ThetaB = _PI_90;
 		__HAL_GPIO_EXTI_CLEAR_IT(V_C_Pin);
 	}
-	HAL_GPIO_EXTI_IRQHandler(V_C_Pin);
 }
 
 /**
  * @brief This function handles EXTI line[15:10] interrupts.
- *///EXTI_15_10 has V_A
+ *///EXTI_15_10 has V_AB, V_BC
 void EXTI15_10_IRQHandler(void)
 {
 	if(__HAL_GPIO_EXTI_GET_IT(V_A_Pin)!=RESET){
-		ThetaV=0;
+		ThetaAB = 0;
+		ThetaA = _PI330;
+		ThetaB = _PI210;
+		ThetaC = _PI_90;
+
 		__HAL_GPIO_EXTI_CLEAR_IT(V_A_Pin);
 	}
 
-	if(__HAL_GPIO_EXTI_GET_IT(V_A_Pin)!=RESET){ //TODO POTENTIALLY REMOVE?
+	if(__HAL_GPIO_EXTI_GET_IT(V_B_Pin)!=RESET){ 
+		ThetaBC = 0;
+		ThetaB = _PI330;
+		ThetaC = _PI210;
+		ThetaA = _PI_90;
 		__HAL_GPIO_EXTI_CLEAR_IT(V_B_Pin);
-		//TODO MORE WITH V_B
 	}
 
 	//INITIALIZE STARTUP AND WRITE 1 TO START PIN
@@ -257,9 +267,6 @@ void EXTI15_10_IRQHandler(void)
 	}
 
 	/* USER CODE END EXTI15_10_IRQn 0 */
-	HAL_GPIO_EXTI_IRQHandler(V_B_Pin);
-	HAL_GPIO_EXTI_IRQHandler(V_A_Pin);
-	HAL_GPIO_EXTI_IRQHandler(B1_Pin);
 	/* USER CODE BEGIN EXTI15_10_IRQn 1 */
 
 	/* USER CODE END EXTI15_10_IRQn 1 */
@@ -273,7 +280,14 @@ void TIM6_DAC_IRQHandler(void)
 {
 	//HAL_UART_Transmit(&hlpuart1, (uint8_t*)"\r\n", 2, 0xFFFF);//LOL LMAO
 	if(TIM_GET_ITSTATUS(&htim6,TIM_IT_UPDATE)!=RESET){
+		if(_DEBUG_FLAG){
+		currVec+=21;
+		if(currVec>63)
+			currVec=0;
+		}	
+		else{
 		currVec = Mat[0] | Mat[3] << 1 | Mat[6]*3 | Mat[1] << 2 | Mat[4]<<3 | Mat[7]*3 << 2 | Mat[2] << 4 | Mat[5] << 5 | Mat[8]*3 << 4;
+		}
 		PhaseChange(currVec);
 		TIM_GET_CLEAR_IT(&htim6,TIM_IT_UPDATE);
 	}
@@ -288,10 +302,26 @@ void TIM7_IRQHandler(void)
 
 	if(TIM_GET_ITSTATUS(&htim7,TIM_IT_UPDATE)!=RESET){
 
-		ThetaV+=(60*2*M_PI)/50000;//Reset via V_A interrupt pin
-		ThetaC+=(DFreq*2*M_PI)/50000;//DFreq Increment every 50Khz
-		if(ThetaC >= (2*M_PI))
-			ThetaC = 0;
+		ThetaAB+=(60*2*M_PI)/50000;//Reset via V_A interrupt
+		ThetaBC+=(60*2*M_PI)/50000;//Reset via V_B interrupt
+		ThetaCA+=(60*2*M_PI)/50000;//Reset via V_C interrupt
+		ThetaA+=(60*2*M_PI)/50000;//set via 0Crossing interrupts
+		ThetaB+=(60*2*M_PI)/50000;//set via 0Crossing interrupts
+		ThetaC+=(60*2*M_PI)/50000;//set via 0Crossing interrupts
+		ThetaOut+=(DFreq*2*M_PI)/50000;//DFreq Increment every 50Khz
+
+		//Reset Output and Line to Neutral Thetas
+		if(ThetaOut >= (2*M_PI))
+			ThetaOut = 0;
+		if(ThetaA >= (2*M_PI))
+                        ThetaA = 0;
+                if(ThetaB >= (2*M_PI))
+                        ThetaB = 0;
+                if(ThetaC >= (2*M_PI))
+                        ThetaC = 0;
+		
+
+		//2.5kHz Triangle Carrier Wave
 		switch(triangle){
 		case 1:
 		triangleWave += 2500/50000;
@@ -305,63 +335,66 @@ void TIM7_IRQHandler(void)
 		break;
 		}
 
-		float32_t cos_a,cos_b,cos_c;
+		//Set the Values for the 3 voltages
+		sin_ab = arm_sin_f32(ThetaAB);
+		sin_bc = arm_sin_f32(ThetaBC);
+		sin_ca = arm_sin_f32(ThetaCA);
 
-
-		cos_a = arm_cos_f32(ThetaV + _PIdiv3);
-		cos_b = arm_cos_f32(ThetaV + 2*_PIdiv3);
-		cos_c = arm_cos_f32(ThetaV + 4*_PIdiv3);
-
-		if(cos_a >= cos_b && cos_a >= cos_c){
+		//virtual input of A
+		if(ThetaA >= _PIdiv6 && ThetaA < _5PIdiv6){
 			Mat[0] = 1;
 			Mat[3] = 0;
 			Mat[6] = 0;
-			V_IN[0] = cos_a;
-			V_IN[1] = cos_b;
-			V_IN[2] = cos_c;
+			V_IN[0] = sin_ab;
+			V_IN[1] = sin_bc;
+			V_IN[2] = sin_ca;
 			virt_a = &VMat[0];
 			virt_b = &VMat[3];	
 			virt_c = &VMat[6];
-		}
-		else if(cos_b >= cos_a && cos_b >= cos_c){
+		}//Virtual input of B as max
+		else if(ThetaB >= _PIdiv6 && ThetaB < _5PIdiv6){
 			Mat[0] = 0;
 			Mat[3] = 1;
 			Mat[6] = 0;
-			V_IN[0] = cos_b;
-			V_IN[1] = cos_c;
-			V_IN[2] = cos_a;
+			V_IN[0] = sin_bc;
+			V_IN[1] = sin_ca;
+			V_IN[2] = sin_ab;
 			virt_a = &VMat[3];
 			virt_b = &VMat[6];
 			virt_c = &VMat[0];
-		}
+		}//Virtual input of C as max
 		else{
 			Mat[0] = 0;
 			Mat[3] = 0;
 			Mat[6] = 1;
-			V_IN[0] = cos_c;//TODO VERIFY THIS STUFF
-			V_IN[1] = cos_a;
-			V_IN[2] = cos_b;
+			V_IN[0] = sin_ca;//TODO VERIFY THIS STUFF
+			V_IN[1] = sin_ab;
+			V_IN[2] = sin_bc;
                         virt_a = &VMat[6];
 			virt_b = &VMat[0];
 			virt_c = &VMat[3];
 		}
 
-		V_AB = _U_IN * (V_IN[0] - V_IN[1]);
-		V_BC = _U_IN * (V_IN[1] - V_IN[2]);
-		V_AC = _U_IN * (V_IN[0] - V_IN[2]);
 
-		DENOM = V_AB*V_AB + V_AC*V_AC + V_BC*V_BC;
-		cosinevalue = arm_cos_f32(ThetaV + _PIdiv3);
-		v_ab = -_U_OUT * _SQRT3 * cosinevalue;
-		cosinevalue = arm_cos_f32(ThetaV + 2*_PIdiv3);
-		v_ac = -_U_OUT * _SQRT3 * cosinevalue;//TODO DETERMINE _U_OUT
+		//Virtual Line to Line input	
+		V_AB = _U_DC * V_IN[0];
+		V_BC = _U_DC * V_IN[1];
+		V_CA = _U_DC * V_IN[2];
+
+		DENOM = V_AB*V_AB + V_CA*V_CA + V_BC*V_BC;
+		//Virtualized AB Output
+		cosinevalue = arm_cos_f32(ThetaOut + _PIdiv3);
+		v_ab = -_U_OUT * _SQRT3 * cosinevalue;//output V_AB
+		//Virtualized AC Output
+		cosinevalue = arm_cos_f32(ThetaOut + 2*_PIdiv3);
+		v_ac = -_U_OUT * _SQRT3 * cosinevalue;//output V_AC //TODO DETERMINE _U_OUT
 		virt_a[0] = 1;
 		virt_b[0] = 0;
 		virt_c[0] = 0;
 		virt_b[1] = ((V_AB-V_BC)*v_ab)/DENOM;//TODO DETERMINE SPEED OF CALCULATIONS
 		virt_b[2] = ((V_AB-V_BC)*v_ac)/DENOM;
-		virt_c[1] = ((V_BC+V_AC)*v_ab)/DENOM;
-		virt_c[2] = ((V_BC+V_AC)*v_ac)/DENOM;
+		virt_c[1] = ((V_BC-V_CA)*v_ab)/DENOM;
+		virt_c[2] = ((V_BC-V_CA)*v_ac)/DENOM;
 		virt_a[1] = 1 - virt_b[1] - virt_c[1];
 		virt_a[2] = 1 - virt_b[2] - virt_c[2];
 
@@ -415,9 +448,9 @@ void LPUART1_IRQHandler(void)
 				isFreqMode = 1;//cheap bool flag
 			break;
 			case 'c':
-				snprintf(freqStr,10,"%.4f",ThetaC);
-				snprintf((char*)txString,27, "Current ThetaC:\t %s\r\n", freqStr);
-				txStrSize = 26; 
+				snprintf(freqStr,10,"%.4f",ThetaOut);
+				snprintf((char*)txString,27, "Current ThetaOut:\t %s\r\n", freqStr);
+				txStrSize = 28; 
 			break;
 			case 'm':
 				snprintf((char*)txString,35,"[%d %d %d ] \r\n[%d %d %d ] \r\n[%d %d %d ] \r\n\n",Mat[0], Mat[1], Mat[2],Mat[3], Mat[4], Mat[5], Mat[6],Mat[7], Mat[8]);
